@@ -93,27 +93,6 @@ public class GestaoAcademicaService {
     }
     
     /**
-     * Cancela matrícula existente no banco em memória.
-     */
-    public boolean cancelarMatricula(String discenteId, String disciplinaId) {
-        // Verificar se matrícula existe no banco
-        if (!matriculaRepository.existeMatricula(discenteId, disciplinaId)) {
-            Logger.erro("Matrícula não encontrada.");
-            return false;
-        }
-        
-        // Remover do banco
-        boolean sucesso = matriculaRepository.remover(discenteId, disciplinaId);
-        
-        if (sucesso) {
-            Logger.sucesso("Matrícula cancelada.");
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
      * Cancela matrícula pelo código da matrícula.
      */
     public boolean cancelarMatriculaPorCodigo(String codigoMatricula) {
@@ -130,9 +109,40 @@ public class GestaoAcademicaService {
     }
     
     /**
-     * Simula reserva de livro com PERSISTÊNCIA no banco de dados.
+     * Lista todas as matrículas de um discente.
      */
-    public boolean simularReservaLivro(String discenteId, String livroId) {
+    public List<Matricula> listarMatriculasDiscente(String discenteId) {
+        return matriculaRepository.listarPorDiscente(discenteId);
+    }
+    
+    /**
+     * Lista todas as reservas de um discente.
+     */
+    public List<ReservaLivro> listarReservasDiscente(String discenteId) {
+        return reservaRepository.listarPorDiscente(discenteId);
+    }
+    
+    /**
+     * Busca uma matrícula pelo código único.
+     */
+    public Matricula buscarMatriculaPorCodigo(String codigoMatricula) {
+        return matriculaRepository.buscarPorCodigo(codigoMatricula);
+    }
+    
+    /**
+     * Simula reserva de livro usando código de matrícula.
+     */
+    public boolean simularReservaLivro(String codigoMatricula, String livroId) {
+        // Buscar matrícula pelo código
+        Matricula matricula = matriculaRepository.buscarPorCodigo(codigoMatricula);
+        if (matricula == null) {
+            Logger.erro("Código de matrícula não encontrado.");
+            return false;
+        }
+        
+        // Obter discenteId da matrícula
+        String discenteId = matricula.getDiscenteId();
+        
         try {
             // ETAPA 1: Validar disponibilidade (microsserviço + banco)
             disponibilidadeService.validarReservaLivro(livroId);
@@ -167,9 +177,19 @@ public class GestaoAcademicaService {
     }
     
     /**
-     * Cancela reserva de livro existente no banco em memória.
+     * Cancela reserva de livro usando código de matrícula.
      */
-    public boolean cancelarReservaLivro(String discenteId, String livroId) {
+    public boolean cancelarReservaLivro(String codigoMatricula, String livroId) {
+        // Buscar matrícula pelo código
+        Matricula matricula = matriculaRepository.buscarPorCodigo(codigoMatricula);
+        if (matricula == null) {
+            Logger.erro("Código de matrícula não encontrado.");
+            return false;
+        }
+        
+        // Obter discenteId da matrícula
+        String discenteId = matricula.getDiscenteId();
+        
         // Verificar se reserva existe no banco
         if (!reservaRepository.existeReserva(discenteId, livroId)) {
             Logger.erro("Reserva não encontrada.");
@@ -185,56 +205,5 @@ public class GestaoAcademicaService {
         }
         
         return false;
-    }
-    
-    /**
-     * Lista todas as matrículas de um discente.
-     */
-    public List<Matricula> listarMatriculasDiscente(String discenteId) {
-        return matriculaRepository.listarPorDiscente(discenteId);
-    }
-    
-    /**
-     * Lista todas as reservas de um discente.
-     */
-    public List<ReservaLivro> listarReservasDiscente(String discenteId) {
-        return reservaRepository.listarPorDiscente(discenteId);
-    }
-    
-    /**
-     * Busca uma matrícula pelo código único.
-     */
-    public Matricula buscarMatriculaPorCodigo(String codigoMatricula) {
-        return matriculaRepository.buscarPorCodigo(codigoMatricula);
-    }
-    
-    /**
-     * Simula reserva de livro usando código de matrícula.
-     */
-    public boolean simularReservaLivroPorCodigo(String codigoMatricula, String livroId) {
-        // Buscar matrícula pelo código
-        Matricula matricula = matriculaRepository.buscarPorCodigo(codigoMatricula);
-        if (matricula == null) {
-            Logger.erro("Código de matrícula não encontrado.");
-            return false;
-        }
-        
-        // Usar o discenteId da matrícula para fazer a reserva
-        return simularReservaLivro(matricula.getDiscenteId(), livroId);
-    }
-    
-    /**
-     * Cancela reserva de livro usando código de matrícula.
-     */
-    public boolean cancelarReservaLivroPorCodigo(String codigoMatricula, String livroId) {
-        // Buscar matrícula pelo código
-        Matricula matricula = matriculaRepository.buscarPorCodigo(codigoMatricula);
-        if (matricula == null) {
-            Logger.erro("Código de matrícula não encontrado.");
-            return false;
-        }
-        
-        // Usar o discenteId da matrícula para cancelar a reserva
-        return cancelarReservaLivro(matricula.getDiscenteId(), livroId);
     }
 }

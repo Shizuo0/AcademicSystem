@@ -544,7 +544,7 @@ public class ConsoleView {
         System.out.println("   Verificando disponibilidade...");
         System.out.println("   Registrando simulação...");
         
-        boolean sucesso = reservaController.realizarReservaPorCodigo(codigoMatricula, livroId);
+        boolean sucesso = reservaController.realizarReserva(codigoMatricula, livroId);
         
         if (!sucesso) {
             TableFormatter.imprimirDica("Verifique se o código de matrícula está correto (opção 6) e se o livro está disponível (opção 3).");
@@ -573,7 +573,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Removendo reserva da simulação...");
         
-        boolean sucesso = reservaController.cancelarReservaPorCodigo(codigoMatricula, livroId);
+        boolean sucesso = reservaController.cancelarReserva(codigoMatricula, livroId);
         
         if (!sucesso) {
             System.out.println("\n[DICA] Sugestão: Consulte suas reservas (opção 9) para");
@@ -601,6 +601,13 @@ public class ConsoleView {
             System.out.println("\n[INFO] Você não possui matrículas no momento.");
             TableFormatter.imprimirDica("Use a opção 4 para matricular em uma disciplina.");
         } else {
+            // Exibir informações do discente (pega da primeira matrícula)
+            Map<String, Object> primeiraMatricula = matriculas.get(0);
+            System.out.println("\n[DISCENTE]");
+            System.out.println("  ID: " + primeiraMatricula.get("discenteId"));
+            System.out.println("  Nome: " + primeiraMatricula.get("discenteNome"));
+            System.out.println("  Curso: " + primeiraMatricula.get("discenteCurso"));
+            
             System.out.println("\n[OK] Suas matrículas (" + matriculas.size() + "/5):");
             
             int[] larguras = {10, 10, 24, 12};
@@ -636,7 +643,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Consultando reservas simuladas...");
         
-        List<Map<String, Object>> reservas = reservaController.consultarReservasPorCodigo(codigoMatricula);
+        List<Map<String, Object>> reservas = reservaController.consultarReservas(codigoMatricula);
         
         if (reservas.isEmpty()) {
             System.out.println("\n[INFO] Você não possui reservas no momento.");

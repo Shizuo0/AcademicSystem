@@ -14,6 +14,7 @@ import java.util.Map;
 
 /**
  * Controller responsável pelas operações de Reserva de Livros.
+ * Todas as operações de reserva são realizadas usando código de matrícula.
  */
 public class ReservaController {
     
@@ -26,33 +27,11 @@ public class ReservaController {
     }
     
     /**
-     * Realiza uma reserva de livro.
-     */
-    public boolean realizarReserva(String discenteId, String livroId) {
-        try {
-            return gestaoService.simularReservaLivro(discenteId, livroId);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    
-    /**
      * Realiza uma reserva de livro usando código de matrícula.
      */
-    public boolean realizarReservaPorCodigo(String codigoMatricula, String livroId) {
+    public boolean realizarReserva(String codigoMatricula, String livroId) {
         try {
-            return gestaoService.simularReservaLivroPorCodigo(codigoMatricula, livroId);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    
-    /**
-     * Cancela uma reserva de livro.
-     */
-    public boolean cancelarReserva(String discenteId, String livroId) {
-        try {
-            return gestaoService.cancelarReservaLivro(discenteId, livroId);
+            return gestaoService.simularReservaLivro(codigoMatricula, livroId);
         } catch (Exception e) {
             return false;
         }
@@ -61,19 +40,27 @@ public class ReservaController {
     /**
      * Cancela uma reserva de livro usando código de matrícula.
      */
-    public boolean cancelarReservaPorCodigo(String codigoMatricula, String livroId) {
+    public boolean cancelarReserva(String codigoMatricula, String livroId) {
         try {
-            return gestaoService.cancelarReservaLivroPorCodigo(codigoMatricula, livroId);
+            return gestaoService.cancelarReservaLivro(codigoMatricula, livroId);
         } catch (Exception e) {
             return false;
         }
     }
     
     /**
-     * Consulta todas as reservas de um discente.
+     * Consulta reservas usando código de matrícula.
      */
-    public List<Map<String, Object>> consultarReservas(String discenteId) {
+    public List<Map<String, Object>> consultarReservas(String codigoMatricula) {
         try {
+            // Buscar matrícula pelo código
+            Matricula matricula = gestaoService.buscarMatriculaPorCodigo(codigoMatricula);
+            if (matricula == null) {
+                return Collections.emptyList();
+            }
+            
+            // Buscar reservas do discente
+            String discenteId = matricula.getDiscenteId();
             List<ReservaLivro> reservas = gestaoService.listarReservasDiscente(discenteId);
             List<Map<String, Object>> resultado = new ArrayList<>();
             
@@ -105,25 +92,6 @@ public class ReservaController {
             }
             
             return resultado;
-            
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
-    }
-    
-    /**
-     * Consulta reservas usando código de matrícula.
-     */
-    public List<Map<String, Object>> consultarReservasPorCodigo(String codigoMatricula) {
-        try {
-            // Buscar matrícula pelo código
-            Matricula matricula = gestaoService.buscarMatriculaPorCodigo(codigoMatricula);
-            if (matricula == null) {
-                return Collections.emptyList();
-            }
-            
-            // Usar o discenteId da matrícula para buscar reservas
-            return consultarReservas(matricula.getDiscenteId());
             
         } catch (Exception e) {
             return Collections.emptyList();
