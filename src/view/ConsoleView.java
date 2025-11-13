@@ -1,9 +1,15 @@
 package view;
 
-import controller.SistemaController;
+import controller.BibliotecaController;
+import controller.ControllerFactory;
+import controller.DiscenteController;
+import controller.DisciplinaController;
+import controller.MatriculaController;
+import controller.ReservaController;
 import model.Discente;
 import model.Disciplina;
 import model.Livro;
+import util.DatabaseConnection;
 import util.InputValidator;
 import util.TableFormatter;
 
@@ -13,30 +19,91 @@ import java.util.Scanner;
 
 public class ConsoleView {
     
-    private final SistemaController controller;
+    private final ControllerFactory controllerFactory;
+    private final DiscenteController discenteController;
+    private final DisciplinaController disciplinaController;
+    private final BibliotecaController bibliotecaController;
+    private final MatriculaController matriculaController;
+    private final ReservaController reservaController;
     private final Scanner scanner;
     
     /**
-     * Construtor padrão - cria o controller internamente.
+     * Construtor padrão - cria os controllers internamente.
      */
     public ConsoleView() {
-        this.controller = SistemaController.criar();
+        System.out.println("═".repeat(60));
+        System.out.println("  SISTEMA ACADÊMICO - UNIFOR");
+        System.out.println("  Iniciando aplicação...");
+        System.out.println("═".repeat(60));
+        System.out.println();
+        
+        try {
+            System.out.println("[PROCESSANDO] Inicializando sistema...");
+            
+            // Criar factory de controllers
+            this.controllerFactory = ControllerFactory.criar();
+            
+            // Obter controllers especializados
+            this.discenteController = controllerFactory.getDiscenteController();
+            this.disciplinaController = controllerFactory.getDisciplinaController();
+            this.bibliotecaController = controllerFactory.getBibliotecaController();
+            this.matriculaController = controllerFactory.getMatriculaController();
+            this.reservaController = controllerFactory.getReservaController();
+            
+            this.scanner = new Scanner(System.in);
+            
+            // Registra shutdown hook para limpar banco de dados ao encerrar
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("\n═".repeat(60));
+                System.out.println("  ENCERRANDO SISTEMA...");
+                System.out.println("═".repeat(60));
+                controllerFactory.getDatabaseConnection().limparTodasTabelas();
+                System.out.println("═".repeat(60));
+                System.out.println("  Sistema encerrado. Dados limpos com sucesso!");
+                System.out.println("═".repeat(60));
+            }, "ShutdownHook-DatabaseCleanup"));
+            
+            System.out.println("═".repeat(60));
+            System.out.println("  Sistema inicializado com sucesso!");
+            System.out.println("═".repeat(60));
+            
+        } catch (Exception e) {
+            System.err.println("\n[ERRO] ERRO CRÍTICO ao inicializar sistema:");
+            System.err.println("   " + e.getMessage());
+            System.err.println("\n[DICA] Verifique:");
+            System.err.println("   - Dependências em lib/ (mysql-connector, gson)");
+            System.err.println("   - MySQL configurado e rodando");
+            System.err.println("   - Microsserviços acessíveis");
+            e.printStackTrace();
+            throw new RuntimeException("Falha ao inicializar o sistema", e);
+        }
+    }
+    
+    /**
+     * Construtor alternativo para testes - permite injetar factory mockada.
+     */
+    public ConsoleView(ControllerFactory controllerFactory) {
+        this.controllerFactory = controllerFactory;
+        this.discenteController = controllerFactory.getDiscenteController();
+        this.disciplinaController = controllerFactory.getDisciplinaController();
+        this.bibliotecaController = controllerFactory.getBibliotecaController();
+        this.matriculaController = controllerFactory.getMatriculaController();
+        this.reservaController = controllerFactory.getReservaController();
         this.scanner = new Scanner(System.in);
     }
     
     /**
-     * Construtor alternativo para testes - permite injetar controller mockado.
+     * Retorna a factory para operações externas.
      */
-    public ConsoleView(SistemaController controller) {
-        this.controller = controller;
-        this.scanner = new Scanner(System.in);
+    public ControllerFactory getControllerFactory() {
+        return controllerFactory;
     }
     
     /**
-     * Retorna o controller para operações externas (ex: shutdown hook).
+     * Retorna a conexão do banco para operações externas (ex: testes).
      */
-    public SistemaController getController() {
-        return controller;
+    public DatabaseConnection getDatabaseConnection() {
+        return controllerFactory.getDatabaseConnection();
     }
     
     public void iniciar() {
@@ -144,7 +211,7 @@ public class ConsoleView {
         
         System.out.println("[PROCESSANDO] Carregando lista de discentes do microsserviço...");
         
-        List<Discente> discentes = controller.listarTodosDiscentes();
+        List<Discente> discentes = discenteController.listarTodosDiscentes();
         
         if (discentes.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum discente disponível no momento!");
@@ -184,7 +251,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Buscando detalhes...");
         
-        Discente discente = controller.consultarDiscente(id);
+        Discente discente = discenteController.consultarDiscente(id);
         
         if (discente == null) {
             TableFormatter.imprimirErro("Discente não encontrado!");
@@ -207,7 +274,7 @@ public class ConsoleView {
         
         System.out.println("[PROCESSANDO] Carregando cursos disponíveis...");
         
-        List<String> cursos = controller.listarCursosDisponiveis();
+        List<String> cursos = disciplinaController.listarCursosDisponiveis();
         
         if (cursos.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum curso encontrado!");
@@ -244,7 +311,7 @@ public class ConsoleView {
                 
                 System.out.println("\n[PROCESSANDO] Carregando disciplinas de " + cursoSelecionado + "...");
                 
-                List<Disciplina> disciplinas = controller.listarDisciplinasPorCurso(cursoSelecionado);
+                List<Disciplina> disciplinas = disciplinaController.listarDisciplinasPorCurso(cursoSelecionado);
                 
                 if (disciplinas.isEmpty()) {
                     TableFormatter.imprimirErro("Nenhuma disciplina encontrada para este curso!");
@@ -331,7 +398,7 @@ public class ConsoleView {
         
         System.out.println("[PROCESSANDO] Carregando livros do microsserviço...");
         
-        List<Livro> livros = controller.listarLivrosDisponiveis();
+        List<Livro> livros = bibliotecaController.listarLivrosDisponiveis();
         
         if (livros.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum livro disponível no momento!");
@@ -424,7 +491,7 @@ public class ConsoleView {
         System.out.println("   Validando regras de negócio...");
         System.out.println("   Salvando no MySQL...");
         
-        boolean sucesso = controller.realizarMatricula(discenteId, disciplinaId);
+        boolean sucesso = matriculaController.realizarMatricula(discenteId, disciplinaId);
         
         if (!sucesso) {
             // Service já exibiu mensagem específica
@@ -451,7 +518,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Removendo matrícula do MySQL...");
         
-        boolean sucesso = controller.cancelarMatriculaPorCodigo(codigoMatricula);
+        boolean sucesso = matriculaController.cancelarMatriculaPorCodigo(codigoMatricula);
         
         if (!sucesso) {
             TableFormatter.imprimirDica("Consulte suas matrículas (opção 8) para verificar o código correto.");
@@ -477,7 +544,7 @@ public class ConsoleView {
         System.out.println("   Verificando disponibilidade...");
         System.out.println("   Registrando simulação...");
         
-        boolean sucesso = controller.realizarReservaPorCodigo(codigoMatricula, livroId);
+        boolean sucesso = reservaController.realizarReservaPorCodigo(codigoMatricula, livroId);
         
         if (!sucesso) {
             TableFormatter.imprimirDica("Verifique se o código de matrícula está correto (opção 6) e se o livro está disponível (opção 3).");
@@ -506,7 +573,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Removendo reserva da simulação...");
         
-        boolean sucesso = controller.cancelarReservaPorCodigo(codigoMatricula, livroId);
+        boolean sucesso = reservaController.cancelarReservaPorCodigo(codigoMatricula, livroId);
         
         if (!sucesso) {
             System.out.println("\n[DICA] Sugestão: Consulte suas reservas (opção 9) para");
@@ -528,7 +595,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Consultando MySQL + microsserviço...");
         
-        List<Map<String, Object>> matriculas = controller.consultarMatriculas(discenteId);
+        List<Map<String, Object>> matriculas = matriculaController.consultarMatriculas(discenteId);
         
         if (matriculas.isEmpty()) {
             System.out.println("\n[INFO] Você não possui matrículas no momento.");
@@ -569,7 +636,7 @@ public class ConsoleView {
         
         System.out.println("\n[PROCESSANDO] Consultando reservas simuladas...");
         
-        List<Map<String, Object>> reservas = controller.consultarReservasPorCodigo(codigoMatricula);
+        List<Map<String, Object>> reservas = reservaController.consultarReservasPorCodigo(codigoMatricula);
         
         if (reservas.isEmpty()) {
             System.out.println("\n[INFO] Você não possui reservas no momento.");
