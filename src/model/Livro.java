@@ -7,7 +7,7 @@ public class Livro {
     private String titulo;
     private String autor;
     private Integer ano;
-    
+
     @SerializedName(value = "statusDisponibilidade", alternate = {"status", "disponibilidade", "disponivel"})
     private StatusDisponibilidade statusDisponibilidade;
 

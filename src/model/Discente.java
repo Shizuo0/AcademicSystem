@@ -7,7 +7,7 @@ public class Discente {
     private String nome;
     private String curso;
     private String modalidade;
-    
+
     @SerializedName(value = "situacaoAcademica", alternate = {"situacao", "status"})
     private SituacaoAcademica situacaoAcademica;
 

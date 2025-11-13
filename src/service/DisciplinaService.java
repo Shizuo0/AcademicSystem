@@ -13,48 +13,62 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DisciplinaService {
-    
+
     private static final String DISCIPLINA_BASE_URL = "https://sswfuybfs8.execute-api.us-east-2.amazonaws.com/disciplinaServico/msDisciplina";
-    
+
     private final IHttpClient httpClient;
     private final GsonParser jsonParser;
     private final Map<String, List<Disciplina>> cacheListaPorCurso;
     private List<Disciplina> cacheListaCompleta;
-    private long ultimaAtualizacao;
-    private static final long CACHE_EXPIRATION_MS = 300000;
+    private boolean cacheInicializado;
 
     public DisciplinaService(IHttpClient httpClient) {
         this.httpClient = httpClient;
         this.jsonParser = new GsonParser();
         this.cacheListaPorCurso = new HashMap<>();
         this.cacheListaCompleta = null;
-        this.ultimaAtualizacao = 0;
+        this.cacheInicializado = false;
+    }
+
+    public void inicializarCache() {
+        if (cacheInicializado) {
+            Logger.debug("[CACHE] Disciplinas já inicializadas");
+            return;
+        }
+
+        Logger.info("[CACHE] Inicializando cache de disciplinas...");
+        listarTodas();
+        cacheInicializado = true;
+        Logger.info("[CACHE] Cache de disciplinas inicializado com " +
+            (cacheListaCompleta != null ? cacheListaCompleta.size() : 0) + " registros");
     }
 
     public List<Disciplina> listarTodas() {
-
-        if (cacheListaCompleta != null && !isCacheExpirado()) {
+        if (cacheListaCompleta != null) {
             Logger.debug("[CACHE HIT] Lista completa de disciplinas");
             return new ArrayList<>(cacheListaCompleta);
         }
-        
+
         try {
             long startTime = System.currentTimeMillis();
-            
+
             String jsonResponse = httpClient.get(DISCIPLINA_BASE_URL);
-            
+
             long duration = System.currentTimeMillis() - startTime;
-            Logger.debug("[TEMPO] Requisição listar disciplinas: " + 
-                String.format("%.2f", duration / 1000.0) + "s");
+            double durationSeconds = duration / 1000.0;
+
+            if (durationSeconds > 3.0) {
+                Logger.aviso("Requisição listar disciplinas demorou " +
+                    String.format("%.2f", durationSeconds) + "s (limite: 3.0s)");
+            }
 
             List<Disciplina> disciplinas = jsonParser.parseList(jsonResponse, Disciplina.class);
 
             cacheListaCompleta = new ArrayList<>(disciplinas);
             cacheListaPorCurso.clear();
-            ultimaAtualizacao = System.currentTimeMillis();
-            
+
             return disciplinas;
-            
+
         } catch (IOException e) {
             Logger.erro("Falha ao listar disciplinas: " + e.getMessage());
             return new ArrayList<>();
@@ -65,22 +79,26 @@ public class DisciplinaService {
         if (curso == null || curso.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         String cursoNormalizado = curso.trim().toLowerCase();
 
-        if (cacheListaPorCurso.containsKey(cursoNormalizado) && !isCacheExpirado()) {
+        if (cacheListaPorCurso.containsKey(cursoNormalizado)) {
             Logger.debug("[CACHE HIT] Disciplinas do curso: " + curso);
             return new ArrayList<>(cacheListaPorCurso.get(cursoNormalizado));
         }
 
+        if (!cacheInicializado) {
+            inicializarCache();
+        }
+
         List<Disciplina> todasDisciplinas = listarTodas();
         List<Disciplina> disciplinasDoCurso = todasDisciplinas.stream()
-            .filter(d -> d.getCurso() != null && 
+            .filter(d -> d.getCurso() != null &&
                         d.getCurso().toLowerCase().contains(cursoNormalizado))
             .collect(Collectors.toList());
 
         cacheListaPorCurso.put(cursoNormalizado, new ArrayList<>(disciplinasDoCurso));
-        
+
         return disciplinasDoCurso;
     }
 
@@ -88,29 +106,11 @@ public class DisciplinaService {
         if (id == null) {
             return null;
         }
-        
+
         List<Disciplina> todasDisciplinas = listarTodas();
         return todasDisciplinas.stream()
             .filter(d -> d.getId() != null && d.getId().equals(id))
             .findFirst()
             .orElse(null);
-    }
-
-    public List<Disciplina> buscarComVagas() {
-        List<Disciplina> todasDisciplinas = listarTodas();
-        return todasDisciplinas.stream()
-            .filter(d -> d.getVagas() != null && d.getVagas() > 0)
-            .collect(Collectors.toList());
-    }
-
-    public void limparCache() {
-        cacheListaCompleta = null;
-        cacheListaPorCurso.clear();
-        ultimaAtualizacao = 0;
-        Logger.debug("[CACHE] Cache de disciplinas limpo");
-    }
-
-    private boolean isCacheExpirado() {
-        return (System.currentTimeMillis() - ultimaAtualizacao) > CACHE_EXPIRATION_MS;
     }
 }

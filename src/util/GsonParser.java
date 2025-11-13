@@ -16,21 +16,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GsonParser {
-    
+
     private final Gson gson;
-    
+
     public GsonParser() {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(StatusDisponibilidade.class, new StatusDisponibilidadeDeserializer())
                 .registerTypeAdapter(SituacaoAcademica.class, new SituacaoAcademicaDeserializer())
                 .create();
     }
-    
+
     public <T> T parseObject(String json, Class<T> classOfT) {
         if (json == null || json.trim().isEmpty()) {
             return null;
         }
-        
+
         try {
             return gson.fromJson(json, classOfT);
         } catch (JsonSyntaxException e) {
@@ -38,12 +38,12 @@ public class GsonParser {
             return null;
         }
     }
-    
+
     public <T> List<T> parseList(String json, Class<T> classOfT) {
         if (json == null || json.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         try {
             Type listType = TypeToken.getParameterized(List.class, classOfT).getType();
             List<T> result = gson.fromJson(json, listType);
@@ -53,10 +53,10 @@ public class GsonParser {
             return new ArrayList<>();
         }
     }
-    
+
     private static class StatusDisponibilidadeDeserializer implements JsonDeserializer<StatusDisponibilidade> {
         @Override
-        public StatusDisponibilidade deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) 
+        public StatusDisponibilidade deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
                 throws JsonParseException {
             if (json.isJsonPrimitive()) {
                 if (json.getAsJsonPrimitive().isBoolean()) {
@@ -73,10 +73,10 @@ public class GsonParser {
             return StatusDisponibilidade.DISPONIVEL;
         }
     }
-    
+
     private static class SituacaoAcademicaDeserializer implements JsonDeserializer<SituacaoAcademica> {
         @Override
-        public SituacaoAcademica deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) 
+        public SituacaoAcademica deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
                 throws JsonParseException {
             if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
                 String value = json.getAsString().toUpperCase();

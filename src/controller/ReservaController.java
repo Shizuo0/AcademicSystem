@@ -12,23 +12,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controller responsável pelas operações de Reserva de Livros.
- * Todas as operações de reserva são realizadas usando código de matrícula.
- */
 public class ReservaController {
-    
+
     private final GestaoAcademicaService gestaoService;
     private final FacadeService facadeService;
-    
+
     public ReservaController(GestaoAcademicaService gestaoService, FacadeService facadeService) {
         this.gestaoService = gestaoService;
         this.facadeService = facadeService;
     }
-    
-    /**
-     * Realiza uma reserva de livro usando código de matrícula.
-     */
+
     public boolean realizarReserva(String codigoMatricula, String livroId) {
         try {
             return gestaoService.simularReservaLivro(codigoMatricula, livroId);
@@ -36,10 +29,7 @@ public class ReservaController {
             return false;
         }
     }
-    
-    /**
-     * Cancela uma reserva de livro usando código de matrícula.
-     */
+
     public boolean cancelarReserva(String codigoMatricula, String livroId) {
         try {
             return gestaoService.cancelarReservaLivro(codigoMatricula, livroId);
@@ -47,29 +37,24 @@ public class ReservaController {
             return false;
         }
     }
-    
-    /**
-     * Consulta reservas usando código de matrícula.
-     */
+
     public List<Map<String, Object>> consultarReservas(String codigoMatricula) {
         try {
-            // Buscar matrícula pelo código
             Matricula matricula = gestaoService.buscarMatriculaPorCodigo(codigoMatricula);
             if (matricula == null) {
                 return Collections.emptyList();
             }
-            
-            // Buscar reservas do discente
+
             String discenteId = matricula.getDiscenteId();
             List<ReservaLivro> reservas = gestaoService.listarReservasDiscente(discenteId);
             List<Map<String, Object>> resultado = new ArrayList<>();
-            
+
             for (ReservaLivro reserva : reservas) {
                 Map<String, Object> info = new HashMap<>();
                 try {
                     Long livroId = Long.parseLong(reserva.getLivroId());
                     Livro livro = facadeService.buscarLivro(livroId);
-                    
+
                     if (livro != null) {
                         info.put("livroId", reserva.getLivroId());
                         info.put("titulo", livro.getTitulo());
@@ -87,12 +72,12 @@ public class ReservaController {
                     info.put("autor", "N/A");
                     info.put("dataReserva", reserva.getDataReserva());
                 }
-                
+
                 resultado.add(info);
             }
-            
+
             return resultado;
-            
+
         } catch (Exception e) {
             return Collections.emptyList();
         }
