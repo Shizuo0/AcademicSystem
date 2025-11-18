@@ -3,6 +3,8 @@ package service;
 import model.Discente;
 import model.Disciplina;
 import model.Livro;
+import model.Matricula;
+import model.ReservaLivro;
 import util.Logger;
 
 import java.util.List;
@@ -14,15 +16,21 @@ public class FacadeService {
     private final DiscenteService discenteService;
     private final DisciplinaService disciplinaService;
     private final BibliotecaService bibliotecaService;
+    private final DisponibilidadeService disponibilidadeService;
+    private final GestaoAcademicaService gestaoAcademicaService;
 
     public FacadeService(
             DiscenteService discenteService,
             DisciplinaService disciplinaService,
-            BibliotecaService bibliotecaService) {
+            BibliotecaService bibliotecaService,
+            DisponibilidadeService disponibilidadeService,
+            GestaoAcademicaService gestaoAcademicaService) {
 
         this.discenteService = discenteService;
         this.disciplinaService = disciplinaService;
         this.bibliotecaService = bibliotecaService;
+        this.disponibilidadeService = disponibilidadeService;
+        this.gestaoAcademicaService = gestaoAcademicaService;
     }
 
     public void inicializarCaches() {
@@ -81,5 +89,41 @@ public class FacadeService {
 
     public List<Livro> listarLivros() {
         return bibliotecaService.listarTodos();
+    }
+
+    public int calcularVagasDisponiveis(String disciplinaId) {
+        return disponibilidadeService.calcularVagasDisponiveis(disciplinaId);
+    }
+
+    public boolean verificarLivroDisponivel(String livroId) {
+        return disponibilidadeService.verificarLivroDisponivel(livroId);
+    }
+
+    public boolean simularMatricula(String discenteId, String disciplinaId) {
+        return gestaoAcademicaService.simularMatricula(discenteId, disciplinaId);
+    }
+
+    public boolean cancelarMatriculaPorCodigo(String codigoMatricula) {
+        return gestaoAcademicaService.cancelarMatriculaPorCodigo(codigoMatricula);
+    }
+
+    public List<Matricula> listarMatriculasDiscente(String discenteId) {
+        return gestaoAcademicaService.listarMatriculasDiscente(discenteId);
+    }
+
+    public List<ReservaLivro> listarReservasDiscente(String discenteId) {
+        return gestaoAcademicaService.listarReservasDiscente(discenteId);
+    }
+
+    public Matricula buscarMatriculaPorCodigo(String codigoMatricula) {
+        return gestaoAcademicaService.buscarMatriculaPorCodigo(codigoMatricula);
+    }
+
+    public boolean simularReservaLivro(String codigoMatricula, String livroId) {
+        return gestaoAcademicaService.simularReservaLivro(codigoMatricula, livroId);
+    }
+
+    public boolean cancelarReservaLivro(String codigoMatricula, String livroId) {
+        return gestaoAcademicaService.cancelarReservaLivro(codigoMatricula, livroId);
     }
 }

@@ -4,7 +4,6 @@ import model.Discente;
 import model.Disciplina;
 import model.Matricula;
 import service.FacadeService;
-import service.GestaoAcademicaService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,17 +13,15 @@ import java.util.Map;
 
 public class MatriculaController {
 
-    private final GestaoAcademicaService gestaoService;
     private final FacadeService facadeService;
 
-    public MatriculaController(GestaoAcademicaService gestaoService, FacadeService facadeService) {
-        this.gestaoService = gestaoService;
+    public MatriculaController(FacadeService facadeService) {
         this.facadeService = facadeService;
     }
 
     public boolean realizarMatricula(String discenteId, String disciplinaId) {
         try {
-            return gestaoService.simularMatricula(discenteId, disciplinaId);
+            return facadeService.simularMatricula(discenteId, disciplinaId);
         } catch (Exception e) {
             return false;
         }
@@ -32,7 +29,7 @@ public class MatriculaController {
 
     public boolean cancelarMatriculaPorCodigo(String codigoMatricula) {
         try {
-            return gestaoService.cancelarMatriculaPorCodigo(codigoMatricula);
+            return facadeService.cancelarMatriculaPorCodigo(codigoMatricula);
         } catch (Exception e) {
             return false;
         }
@@ -40,7 +37,7 @@ public class MatriculaController {
 
     public List<Map<String, Object>> consultarMatriculas(String discenteId) {
         try {
-            List<Matricula> matriculas = gestaoService.listarMatriculasDiscente(discenteId);
+            List<Matricula> matriculas = facadeService.listarMatriculasDiscente(discenteId);
             List<Map<String, Object>> resultado = new ArrayList<>();
 
             Discente discente = null;

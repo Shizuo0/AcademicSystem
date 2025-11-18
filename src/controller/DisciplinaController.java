@@ -1,7 +1,6 @@
 package controller;
 
 import model.Disciplina;
-import service.DisponibilidadeService;
 import service.FacadeService;
 
 import java.util.Collections;
@@ -11,11 +10,9 @@ import java.util.stream.Collectors;
 public class DisciplinaController {
 
     private final FacadeService facadeService;
-    private final DisponibilidadeService disponibilidadeService;
 
-    public DisciplinaController(FacadeService facadeService, DisponibilidadeService disponibilidadeService) {
+    public DisciplinaController(FacadeService facadeService) {
         this.facadeService = facadeService;
-        this.disponibilidadeService = disponibilidadeService;
     }
 
     public List<String> listarCursosDisponiveis() {
@@ -42,7 +39,7 @@ public class DisciplinaController {
             }
 
             for (Disciplina disciplina : disciplinas) {
-                int vagasReais = disponibilidadeService.calcularVagasDisponiveis(
+                int vagasReais = facadeService.calcularVagasDisponiveis(
                     String.valueOf(disciplina.getId())
                 );
                 disciplina.setVagas(vagasReais);

@@ -4,7 +4,6 @@ import model.Livro;
 import model.Matricula;
 import model.ReservaLivro;
 import service.FacadeService;
-import service.GestaoAcademicaService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,17 +13,15 @@ import java.util.Map;
 
 public class ReservaController {
 
-    private final GestaoAcademicaService gestaoService;
     private final FacadeService facadeService;
 
-    public ReservaController(GestaoAcademicaService gestaoService, FacadeService facadeService) {
-        this.gestaoService = gestaoService;
+    public ReservaController(FacadeService facadeService) {
         this.facadeService = facadeService;
     }
 
     public boolean realizarReserva(String codigoMatricula, String livroId) {
         try {
-            return gestaoService.simularReservaLivro(codigoMatricula, livroId);
+            return facadeService.simularReservaLivro(codigoMatricula, livroId);
         } catch (Exception e) {
             return false;
         }
@@ -32,7 +29,7 @@ public class ReservaController {
 
     public boolean cancelarReserva(String codigoMatricula, String livroId) {
         try {
-            return gestaoService.cancelarReservaLivro(codigoMatricula, livroId);
+            return facadeService.cancelarReservaLivro(codigoMatricula, livroId);
         } catch (Exception e) {
             return false;
         }
@@ -40,13 +37,13 @@ public class ReservaController {
 
     public List<Map<String, Object>> consultarReservas(String codigoMatricula) {
         try {
-            Matricula matricula = gestaoService.buscarMatriculaPorCodigo(codigoMatricula);
+            Matricula matricula = facadeService.buscarMatriculaPorCodigo(codigoMatricula);
             if (matricula == null) {
                 return Collections.emptyList();
             }
 
             String discenteId = matricula.getDiscenteId();
-            List<ReservaLivro> reservas = gestaoService.listarReservasDiscente(discenteId);
+            List<ReservaLivro> reservas = facadeService.listarReservasDiscente(discenteId);
             List<Map<String, Object>> resultado = new ArrayList<>();
 
             for (ReservaLivro reserva : reservas) {

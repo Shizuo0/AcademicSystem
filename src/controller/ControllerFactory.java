@@ -28,21 +28,17 @@ public class ControllerFactory {
         this.dbConnection = dbConnection;
 
         IHttpClient httpClient = new HttpClientImpl();
-
-        DiscenteService discenteService = new DiscenteService(httpClient);
-        DisciplinaService disciplinaService = new DisciplinaService(httpClient);
-        BibliotecaService bibliotecaService = new BibliotecaService(httpClient);
-
-        this.facadeService = new FacadeService(
-            discenteService,
-            disciplinaService,
-            bibliotecaService
-        );
-
+        util.GsonParser gsonParser = new util.GsonParser();
+        
         IMatriculaRepository matriculaRepository =
             new MatriculaRepositoryImpl(dbConnection);
         IReservaRepository reservaRepository =
             new ReservaRepositoryImpl(dbConnection);
+
+        DiscenteService discenteService = new DiscenteService(httpClient, gsonParser);
+        DisciplinaService disciplinaService = new DisciplinaService(httpClient, gsonParser);
+        BibliotecaService bibliotecaService = new BibliotecaService(httpClient, gsonParser);
+
 
         DisponibilidadeService disponibilidadeService = new DisponibilidadeService(
             discenteService,
@@ -58,11 +54,19 @@ public class ControllerFactory {
             disponibilidadeService
         );
 
+        this.facadeService = new FacadeService(
+            discenteService,
+            disciplinaService,
+            bibliotecaService,
+            disponibilidadeService,
+            gestaoService
+        );
+
         this.discenteController = new DiscenteController(facadeService);
-        this.disciplinaController = new DisciplinaController(facadeService, disponibilidadeService);
-        this.bibliotecaController = new BibliotecaController(facadeService, disponibilidadeService);
-        this.matriculaController = new MatriculaController(gestaoService, facadeService);
-        this.reservaController = new ReservaController(gestaoService, facadeService);
+        this.disciplinaController = new DisciplinaController(facadeService);
+        this.bibliotecaController = new BibliotecaController(facadeService);
+        this.matriculaController = new MatriculaController(facadeService);
+        this.reservaController = new ReservaController(facadeService);
     }
 
     public void inicializarCaches() {

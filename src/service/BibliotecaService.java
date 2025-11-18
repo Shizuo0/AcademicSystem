@@ -20,9 +20,9 @@ public class BibliotecaService {
     private List<Livro> cacheLivros;
     private boolean cacheInicializado;
 
-    public BibliotecaService(IHttpClient httpClient) {
+    public BibliotecaService(IHttpClient httpClient, GsonParser jsonParser) {
         this.httpClient = httpClient;
-        this.jsonParser = new GsonParser();
+        this.jsonParser = jsonParser;
         this.cacheLivros = null;
         this.cacheInicializado = false;
     }

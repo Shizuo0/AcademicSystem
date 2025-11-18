@@ -22,9 +22,9 @@ public class DisciplinaService {
     private List<Disciplina> cacheListaCompleta;
     private boolean cacheInicializado;
 
-    public DisciplinaService(IHttpClient httpClient) {
+    public DisciplinaService(IHttpClient httpClient, GsonParser jsonParser) {
         this.httpClient = httpClient;
-        this.jsonParser = new GsonParser();
+        this.jsonParser = jsonParser;
         this.cacheListaPorCurso = new HashMap<>();
         this.cacheListaCompleta = null;
         this.cacheInicializado = false;

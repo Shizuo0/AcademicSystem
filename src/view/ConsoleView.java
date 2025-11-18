@@ -1,11 +1,6 @@
 package view;
 
-import controller.BibliotecaController;
 import controller.ControllerFactory;
-import controller.DiscenteController;
-import controller.DisciplinaController;
-import controller.MatriculaController;
-import controller.ReservaController;
 import model.Discente;
 import model.Disciplina;
 import model.Livro;
@@ -19,11 +14,6 @@ import java.util.Scanner;
 public class ConsoleView {
 
     private final ControllerFactory controllerFactory;
-    private final DiscenteController discenteController;
-    private final DisciplinaController disciplinaController;
-    private final BibliotecaController bibliotecaController;
-    private final MatriculaController matriculaController;
-    private final ReservaController reservaController;
     private final Scanner scanner;
 
     public ConsoleView() {
@@ -39,12 +29,6 @@ public class ConsoleView {
             this.controllerFactory = ControllerFactory.criar();
 
             controllerFactory.inicializarCaches();
-
-            this.discenteController = controllerFactory.getDiscenteController();
-            this.disciplinaController = controllerFactory.getDisciplinaController();
-            this.bibliotecaController = controllerFactory.getBibliotecaController();
-            this.matriculaController = controllerFactory.getMatriculaController();
-            this.reservaController = controllerFactory.getReservaController();
 
             this.scanner = new Scanner(System.in);
 
@@ -173,7 +157,7 @@ public class ConsoleView {
 
         System.out.println("[PROCESSANDO] Carregando lista de discentes do microsserviço...");
 
-        List<Discente> discentes = discenteController.listarTodosDiscentes();
+        List<Discente> discentes = controllerFactory.getDiscenteController().listarTodosDiscentes();
 
         if (discentes.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum discente disponível no momento!");
@@ -212,7 +196,7 @@ public class ConsoleView {
 
         System.out.println("\n[PROCESSANDO] Buscando detalhes...");
 
-        Discente discente = discenteController.consultarDiscente(id);
+        Discente discente = controllerFactory.getDiscenteController().consultarDiscente(id);
 
         if (discente == null) {
             TableFormatter.imprimirErro("Discente não encontrado!");
@@ -235,7 +219,7 @@ public class ConsoleView {
 
         System.out.println("[PROCESSANDO] Carregando cursos disponíveis...");
 
-        List<String> cursos = disciplinaController.listarCursosDisponiveis();
+        List<String> cursos = controllerFactory.getDisciplinaController().listarCursosDisponiveis();
 
         if (cursos.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum curso encontrado!");
@@ -272,7 +256,7 @@ public class ConsoleView {
 
                 System.out.println("\n[PROCESSANDO] Carregando disciplinas de " + cursoSelecionado + "...");
 
-                List<Disciplina> disciplinas = disciplinaController.listarDisciplinasPorCurso(cursoSelecionado);
+                List<Disciplina> disciplinas = controllerFactory.getDisciplinaController().listarDisciplinasPorCurso(cursoSelecionado);
 
                 if (disciplinas.isEmpty()) {
                     TableFormatter.imprimirErro("Nenhuma disciplina encontrada para este curso!");
@@ -357,7 +341,7 @@ public class ConsoleView {
 
         System.out.println("[PROCESSANDO] Carregando livros do microsserviço...");
 
-        List<Livro> livros = bibliotecaController.listarLivrosDisponiveis();
+        List<Livro> livros = controllerFactory.getBibliotecaController().listarLivrosDisponiveis();
 
         if (livros.isEmpty()) {
             TableFormatter.imprimirErro("Nenhum livro disponível no momento!");
@@ -449,7 +433,7 @@ public class ConsoleView {
         System.out.println("   Validando regras de negócio...");
         System.out.println("   Salvando no MySQL...");
 
-        boolean sucesso = matriculaController.realizarMatricula(discenteId, disciplinaId);
+        boolean sucesso = controllerFactory.getMatriculaController().realizarMatricula(discenteId, disciplinaId);
 
         if (!sucesso) {
             TableFormatter.imprimirDica("Consulte o discente (opção 1) e liste as disciplinas (opção 2) antes de matricular.");
@@ -475,7 +459,7 @@ public class ConsoleView {
 
         System.out.println("\n[PROCESSANDO] Removendo matrícula do MySQL...");
 
-        boolean sucesso = matriculaController.cancelarMatriculaPorCodigo(codigoMatricula);
+        boolean sucesso = controllerFactory.getMatriculaController().cancelarMatriculaPorCodigo(codigoMatricula);
 
         if (!sucesso) {
             TableFormatter.imprimirDica("Consulte suas matrículas (opção 8) para verificar o código correto.");
@@ -501,7 +485,7 @@ public class ConsoleView {
         System.out.println("   Verificando disponibilidade...");
         System.out.println("   Registrando simulação...");
 
-        boolean sucesso = reservaController.realizarReserva(codigoMatricula, livroId);
+        boolean sucesso = controllerFactory.getReservaController().realizarReserva(codigoMatricula, livroId);
 
         if (!sucesso) {
             TableFormatter.imprimirDica("Verifique se o código de matrícula está correto (opção 6) e se o livro está disponível (opção 3).");
@@ -530,7 +514,7 @@ public class ConsoleView {
 
         System.out.println("\n[PROCESSANDO] Removendo reserva da simulação...");
 
-        boolean sucesso = reservaController.cancelarReserva(codigoMatricula, livroId);
+        boolean sucesso = controllerFactory.getReservaController().cancelarReserva(codigoMatricula, livroId);
 
         if (!sucesso) {
             System.out.println("\n[DICA] Sugestão: Consulte suas reservas (opção 9) para");
@@ -552,7 +536,7 @@ public class ConsoleView {
 
         System.out.println("\n[PROCESSANDO] Consultando MySQL + microsserviço...");
 
-        List<Map<String, Object>> matriculas = matriculaController.consultarMatriculas(discenteId);
+        List<Map<String, Object>> matriculas = controllerFactory.getMatriculaController().consultarMatriculas(discenteId);
 
         if (matriculas.isEmpty()) {
             System.out.println("\n[INFO] Você não possui matrículas no momento.");
@@ -599,7 +583,7 @@ public class ConsoleView {
 
         System.out.println("\n[PROCESSANDO] Consultando reservas simuladas...");
 
-        List<Map<String, Object>> reservas = reservaController.consultarReservas(codigoMatricula);
+        List<Map<String, Object>> reservas = controllerFactory.getReservaController().consultarReservas(codigoMatricula);
 
         if (reservas.isEmpty()) {
             System.out.println("\n[INFO] Você não possui reservas no momento.");

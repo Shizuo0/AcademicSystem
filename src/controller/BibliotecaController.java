@@ -2,7 +2,6 @@ package controller;
 
 import model.Livro;
 import model.StatusDisponibilidade;
-import service.DisponibilidadeService;
 import service.FacadeService;
 
 import java.util.Collections;
@@ -12,11 +11,9 @@ import java.util.stream.Collectors;
 public class BibliotecaController {
 
     private final FacadeService facadeService;
-    private final DisponibilidadeService disponibilidadeService;
 
-    public BibliotecaController(FacadeService facadeService, DisponibilidadeService disponibilidadeService) {
+    public BibliotecaController(FacadeService facadeService) {
         this.facadeService = facadeService;
-        this.disponibilidadeService = disponibilidadeService;
     }
 
     public List<Livro> listarLivrosDisponiveis() {
@@ -27,7 +24,7 @@ public class BibliotecaController {
                         if (livro.getStatusDisponibilidade() != StatusDisponibilidade.DISPONIVEL) {
                             return false;
                         }
-                        return disponibilidadeService.verificarLivroDisponivel(
+                        return facadeService.verificarLivroDisponivel(
                             String.valueOf(livro.getId())
                         );
                     })

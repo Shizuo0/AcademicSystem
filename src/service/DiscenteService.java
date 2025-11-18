@@ -20,9 +20,9 @@ public class DiscenteService {
     private java.util.List<Discente> cacheListaCompleta;
     private boolean cacheInicializado;
 
-    public DiscenteService(IHttpClient httpClient) {
+    public DiscenteService(IHttpClient httpClient, GsonParser jsonParser) {
         this.httpClient = httpClient;
-        this.jsonParser = new GsonParser();
+        this.jsonParser = jsonParser;
         this.cache = new HashMap<>();
         this.cacheListaCompleta = null;
         this.cacheInicializado = false;
