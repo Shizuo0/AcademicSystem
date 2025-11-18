@@ -6,10 +6,6 @@ import java.sql.SQLException;
 
 public class DatabaseConnection {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/sistema_academico";
-    private static final String USER = "root";
-    private static final String PASSWORD = "12345678";
-
     static {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -21,19 +17,25 @@ public class DatabaseConnection {
     }
 
     public DatabaseConnection() {
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+        try (Connection conn = DriverManager.getConnection(
+                EnvironmentConfig.getDatabaseUrl(),
+                EnvironmentConfig.getDatabaseUser(),
+                EnvironmentConfig.getDatabasePassword())) {
             Logger.debug("[DatabaseConnection] Banco de dados conectado com sucesso.");
         } catch (SQLException e) {
             Logger.erro("[DatabaseConnection] Erro ao conectar ao banco de dados:");
-            Logger.erro("URL: " + URL);
-            Logger.erro("USER: " + USER);
+            Logger.erro("URL: " + EnvironmentConfig.getDatabaseUrl());
+            Logger.erro("USER: " + EnvironmentConfig.getDatabaseUser());
             Logger.erro("Mensagem: " + e.getMessage());
         }
     }
 
     public Connection getConnection() {
         try {
-            return DriverManager.getConnection(URL, USER, PASSWORD);
+            return DriverManager.getConnection(
+                    EnvironmentConfig.getDatabaseUrl(),
+                    EnvironmentConfig.getDatabaseUser(),
+                    EnvironmentConfig.getDatabasePassword());
         } catch (SQLException e) {
             Logger.erro("[DatabaseConnection] Erro ao conectar: " + e.getMessage());
             return null;

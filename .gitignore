@@ -92,6 +92,9 @@ gradlew.bat
 application.properties.local
 config.local.properties
 
+# Environment variables
+.env
+
 # Backup files
 *.bak
 *.backup

@@ -169,6 +169,7 @@ AcademicSystem/
 |------------|--------|-----------|
 | `mysql-connector-j` | 8.0.33 | Driver JDBC para conexão com MySQL |
 | `gson` | 2.10.1 | Serialização/deserialização JSON para APIs |
+| `dotenv-java` | 3.0.0 | Gerenciamento de variáveis de ambiente via arquivo `.env` |
 
 ### **Padrões de Projeto**
 - ✅ **Factory Pattern** - `ControllerFactory` para criação de instâncias
@@ -201,6 +202,8 @@ git clone https://github.com/Shizuo0/AcademicSystem.git
 cd AcademicSystem
 ```
 
+> **📝 Nota:** Após clonar, certifique-se de criar seu arquivo `.env` baseado no `.env.example` antes de executar a aplicação.
+
 ### Passo 2: Configurar o Banco de Dados
 
 1. **Iniciar o MySQL Server**:
@@ -221,20 +224,42 @@ mysql -u root -p
 ```
 Depois copie e cole o conteúdo de `src/sql/schema.sql`.
 
-3. **Configurar credenciais** (se necessário):
+3. **Configurar variáveis de ambiente**:
 
-Edite o arquivo `src/util/DatabaseConnection.java`:
-```java
-private static final String URL = "jdbc:mysql://localhost:3306/sistema_academico";
-private static final String USER = "root";           // Seu usuário MySQL
-private static final String PASSWORD = "12345678";   // Sua senha MySQL
+O sistema utiliza o arquivo `.env` para gerenciar configurações sensíveis. Siga os passos:
+
+**a) Copie o arquivo de exemplo:**
+```bash
+# Linux/Mac
+cp .env.example .env
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
+
+# Windows (CMD)
+copy .env.example .env
 ```
+
+**b) Edite o arquivo `.env` com suas credenciais:**
+```env
+DB_URL=jdbc:mysql://localhost:3306/sistema_academico
+DB_USER=root
+DB_PASSWORD=sua_senha_aqui
+```
+
+> **⚠️ IMPORTANTE:** O arquivo `.env` contém informações sensíveis e **já está incluído no `.gitignore`**. Nunca faça commit dele para o repositório! Use o `.env.example` como template para outros desenvolvedores.
+
+**c) Ordem de prioridade das configurações:**
+1. ✅ Variáveis do arquivo `.env` (se existir)
+2. ✅ Variáveis de ambiente do sistema operacional
+3. ✅ Valores padrão (localhost, root, 12345678)
 
 ### Passo 3: Verificar Dependências
 
 Certifique-se de que os arquivos JAR estão na pasta `lib/`:
 - ✅ `mysql-connector-j-8.0.33.jar`
 - ✅ `gson-2.10.1.jar`
+- ✅ `dotenv-java-3.0.0.jar`
 
 ### Passo 4: Compilar o Projeto
 
@@ -574,7 +599,17 @@ sudo systemctl start mysql
 mysql -u root -p
 ```
 
-3. Verifique as credenciais em `DatabaseConnection.java`
+3. Verifique as credenciais no arquivo `.env`:
+```env
+DB_URL=jdbc:mysql://localhost:3306/sistema_academico
+DB_USER=root
+DB_PASSWORD=sua_senha
+```
+
+4. Se o arquivo `.env` não existir, crie-o baseado no `.env.example`:
+```bash
+cp .env.example .env
+```
 
 ### Erro: "Tabela não existe"
 
