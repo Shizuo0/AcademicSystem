@@ -5,699 +5,237 @@
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?style=for-the-badge&logo=mysql)
 
-**Sistema de Gestão Acadêmica com Integração de Microsserviços**
-
-[Funcionalidades](#-funcionalidades) • [Arquitetura](#-arquitetura) • [Instalação](#-instalação) • [Como Usar](#-como-usar) • [Documentação](#-documentação-técnica)
+**Sistema de Gestão Acadêmica com integração de microsserviços e persistência local**
 
 </div>
 
 ---
 
-## 📋 Sobre o Projeto
+## Conteúdo
 
-O **Sistema Acadêmico UNIFOR** é uma aplicação Java desktop que simula operações de gestão acadêmica, incluindo:
+- [Visão Geral](#visão-geral)
+- [Stack e Ferramentas](#stack-e-ferramentas)
+- [Arquitetura](#arquitetura)
+- [Fluxo Principal](#fluxo-principal)
+- [Funcionalidades Centrais](#funcionalidades-centrais)
+- [Métricas do Projeto](#métricas-do-projeto)
+- [Pré-requisitos](#pré-requisitos)
+- [Configuração Local](#configuração-local)
+- [Scripts e Comandos](#scripts-e-comandos)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Segurança e Confiabilidade](#segurança-e-confiabilidade)
+- [Práticas de Engenharia](#práticas-de-engenharia)
+- [Autor](#autor)
 
-- ✅ **Matrícula de discentes** em disciplinas
-- 📚 **Reserva de livros** da biblioteca
-- 🔄 **Integração com microsserviços externos** para consulta de dados
-- 💾 **Persistência local** em banco de dados MySQL
-- 🎯 **Validação de regras de negócio** (limite de matrículas, compatibilidade de cursos, etc.)
+## Visão Geral
 
-O sistema foi projetado seguindo princípios de **arquitetura limpa**, com separação clara de responsabilidades em camadas (Controller, Service, Repository, View).
+### Objetivos
 
----
+- Simular, em Java, um cenário real de gestão acadêmica com regras de negócio explícitas.
+- Integrar dados de discentes, disciplinas e biblioteca vindos de microsserviços externos.
+- Persistir operações críticas (matrículas e reservas) em banco relacional local.
 
-## ✨ Funcionalidades
+### Situação em que o sistema se aplica
 
-### 🔍 Consultas
-- **Consultar Discente**: Visualizar informações detalhadas dos alunos (nome, curso, modalidade, status acadêmico)
-- **Consultar Disciplinas por Curso**: Listar disciplinas disponíveis filtradas por curso
-- **Consultar Livros**: Verificar disponibilidade de livros na biblioteca
+- Contextos de laboratório/disciplina para exercitar arquitetura em camadas.
+- Demonstrações de validações de negócio em fluxo transacional simples.
+- Cenários com integração externa + cache local para reduzir latência percebida.
 
-### 📝 Matrículas
-- **Matricular em Disciplina**: Realizar matrícula com validação automática de:
-  - Status acadêmico do discente (apenas ATIVO)
-  - Compatibilidade curso-disciplina
-  - Limite de 5 matrículas por discente
-  - Disponibilidade de vagas
-- **Cancelar Matrícula**: Remover matrícula usando código único
-- **Minhas Matrículas**: Visualizar histórico completo de matrículas
+### Solução implementada
 
-### 📚 Biblioteca
-- **Reservar Livro**: Fazer reserva de livros disponíveis
-- **Cancelar Reserva**: Remover reserva de livro
-- **Minhas Reservas**: Listar todos os livros reservados
+A aplicação foi construída como um sistema desktop em modo console, com separação em camadas (Controller, Service, Repository, Model, View), cache em memória para dados dos microsserviços e persistência MySQL para dados transacionais.
 
----
+### Por que essa solução
 
-## 🏗️ Arquitetura
+- A arquitetura em camadas facilita manutenção e testes por responsabilidade.
+- O cache reduz chamadas repetidas às APIs externas durante a sessão.
+- O uso de JDBC/MySQL garante rastreabilidade das operações-chave sem complexidade de framework adicional.
 
-O projeto segue uma arquitetura em camadas bem definida:
+## Stack e Ferramentas
 
-```
-┌─────────────────────────────────────────────────┐
-│                   VIEW LAYER                    │
-│          (ConsoleView - Interface CLI)          │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│                CONTROLLER LAYER                 │
-│   (Gerenciamento de fluxo e validações)         │
-│   - DiscenteController                          │
-│   - DisciplinaController                        │
-│   - BibliotecaController                        │
-│   - MatriculaController                         │
-│   - ReservaController                           │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│                 SERVICE LAYER                   │
-│        (Lógica de negócio e orquestração)       │
-│   - FacadeService (cache de microsserviços)     │
-│   - GestaoAcademicaService (operações)          │
-│   - DisponibilidadeService (validações)         │
-│   - DiscenteService, DisciplinaService, etc     │
-└─────────────┬──────────────────────┬────────────┘
-              │                      │
-    ┌─────────▼──────────┐   ┌──────▼──────────┐
-    │ REPOSITORY LAYER   │   │  EXTERNAL APIs  │
-    │  (Persistência)    │   │ (Microsserviços)│
-    │  - MySQL Database  │   │  - HTTP Clients │
-    └────────────────────┘   └─────────────────┘
-```
+### Core
 
-### 📁 Estrutura de Diretórios
+- Java 21
+- MySQL 8
+- JDBC
 
-```
-AcademicSystem/
-│
-├── src/
-│   ├── Main.java                      # Ponto de entrada da aplicação
-│   │
-│   ├── controller/                    # Camada de controle
-│   │   ├── ControllerFactory.java     # Factory pattern para controllers
-│   │   ├── DiscenteController.java    # Controle de discentes
-│   │   ├── DisciplinaController.java  # Controle de disciplinas
-│   │   ├── BibliotecaController.java  # Controle de biblioteca
-│   │   ├── MatriculaController.java   # Controle de matrículas
-│   │   └── ReservaController.java     # Controle de reservas
-│   │
-│   ├── service/                       # Camada de serviço (lógica de negócio)
-│   │   ├── FacadeService.java         # Facade para microsserviços
-│   │   ├── GestaoAcademicaService.java # Gestão de operações acadêmicas
-│   │   ├── DisponibilidadeService.java # Validações de disponibilidade
-│   │   ├── DiscenteService.java       # Serviço de discentes
-│   │   ├── DisciplinaService.java     # Serviço de disciplinas
-│   │   └── BibliotecaService.java     # Serviço de biblioteca
-│   │
-│   ├── repository/                    # Camada de persistência
-│   │   ├── IMatriculaRepository.java  # Interface do repositório
-│   │   ├── MatriculaRepositoryImpl.java # Implementação MySQL
-│   │   ├── IReservaRepository.java
-│   │   └── ReservaRepositoryImpl.java
-│   │
-│   ├── model/                         # Modelos de domínio
-│   │   ├── Discente.java
-│   │   ├── Disciplina.java
-│   │   ├── Livro.java
-│   │   ├── Matricula.java
-│   │   ├── ReservaLivro.java
-│   │   ├── SituacaoAcademica.java     # Enum
-│   │   └── StatusDisponibilidade.java # Enum
-│   │
-│   ├── exception/                     # Exceções customizadas
-│   │   ├── DiscenteInativoException.java
-│   │   ├── CursoIncompativelException.java
-│   │   ├── LimiteMatriculasExcedidoException.java
-│   │   ├── SemVagasException.java
-│   │   └── LivroIndisponivelException.java
-│   │
-│   ├── view/                          # Interface do usuário
-│   │   └── ConsoleView.java           # Interface CLI interativa
-│   │
-│   ├── util/                          # Utilitários
-│   │   ├── DatabaseConnection.java    # Gerenciamento de conexão MySQL
-│   │   ├── HttpClientImpl.java        # Cliente HTTP para APIs
-│   │   ├── GsonParser.java            # Parser JSON
-│   │   ├── GeradorMatricula.java      # Gerador de códigos únicos
-│   │   ├── InputValidator.java        # Validação de entradas
-│   │   ├── Logger.java                # Sistema de logs
-│   │   └── TableFormatter.java        # Formatação de tabelas CLI
-│   │
-│   └── sql/
-│       └── schema.sql                 # Script de criação do banco
-│
-├── lib/                               # Dependências externas
-│   ├── mysql-connector-j-8.0.33.jar   # Driver MySQL
-│   └── gson-2.10.1.jar                # Biblioteca JSON
-│
-├── bin/                               # Classes compiladas (.class)
-│
-└── README.md                          # Este arquivo
+### Bibliotecas e utilitários
+
+- gson 2.10.1
+- mysql-connector-j 8.0.33
+- dotenv-java (carregamento de `.env`)
+
+### Integrações externas (microsserviços)
+
+- API de Discentes
+- API de Disciplinas
+- API de Biblioteca
+
+### Padrões usados
+
+- Factory Pattern (`ControllerFactory`)
+- Facade Pattern (`FacadeService`)
+- Repository Pattern
+- Injeção de dependência por construtor
+
+## Arquitetura
+
+```text
+src/
+  Main.java
+  controller/
+  service/
+  repository/
+  model/
+  exception/
+  util/
+  view/
+  sql/
+
+lib/
+  mysql-connector-j-8.0.33.jar
+  gson-2.10.1.jar
 ```
 
----
+### Camadas
 
-## 🛠️ Tecnologias Utilizadas
+- View: interação de usuário via CLI (`ConsoleView`).
+- Controller: orquestração de fluxo e entrada/saída.
+- Service: regras de negócio e integração com dados externos.
+- Repository: persistência de matrículas e reservas no MySQL.
+- Model/Exception: domínio e regras de erro explícitas.
 
-### **Core**
-- **Java 21** - Linguagem de programação
-- **MySQL 8.0** - Banco de dados relacional
+## Fluxo Principal
 
-### **Bibliotecas**
-| Biblioteca | Versão | Propósito |
-|------------|--------|-----------|
-| `mysql-connector-j` | 8.0.33 | Driver JDBC para conexão com MySQL |
-| `gson` | 2.10.1 | Serialização/deserialização JSON para APIs |
-| `dotenv-java` | 3.0.0 | Gerenciamento de variáveis de ambiente via arquivo `.env` |
+```mermaid
+flowchart LR
+  U[Usuario no Console] --> V[ConsoleView]
+  V --> C[Controllers]
+  C --> F[FacadeService]
+  F --> S1[DiscenteService]
+  F --> S2[DisciplinaService]
+  F --> S3[BibliotecaService]
+  F --> S4[GestaoAcademicaService]
+  S1 --> API1[MS Discentes]
+  S2 --> API2[MS Disciplinas]
+  S3 --> API3[MS Biblioteca]
+  S4 --> R[Repositories]
+  R --> DB[(MySQL)]
+```
 
-### **Padrões de Projeto**
-- ✅ **Factory Pattern** - `ControllerFactory` para criação de instâncias
-- ✅ **Facade Pattern** - `FacadeService` para simplificar acesso aos microsserviços
-- ✅ **Repository Pattern** - Abstração da camada de persistência
-- ✅ **Dependency Injection** - Injeção manual de dependências via construtores
+## Funcionalidades Centrais
 
-### **APIs Externas** (Microsserviços)
-O sistema integra-se com 3 microsserviços REST via HTTP:
-- **API de Discentes** - Dados de alunos
-- **API de Disciplinas** - Informações de cursos e disciplinas
-- **API de Biblioteca** - Catálogo de livros
+- Consulta de discentes, disciplinas por curso e livros.
+- Matrícula com validações de:
+  - situação acadêmica ativa;
+  - compatibilidade entre curso e disciplina;
+  - limite máximo de matrículas por discente;
+  - disponibilidade de vagas.
+- Reserva de livros com verificação de disponibilidade no microsserviço e no banco local.
+- Cancelamento e listagem de matrículas e reservas por discente.
 
----
+## Métricas do Projeto
 
-## 🚀 Instalação
+Snapshot técnico da base atual:
 
-### Pré-requisitos
+- 39 arquivos Java em `src`.
+- 6 classes de controller (incluindo factory).
+- 6 serviços de domínio/orquestração.
+- 4 artefatos de repositório (interfaces + implementações).
+- 7 modelos de domínio.
+- 5 exceções customizadas.
+- 3 microsserviços externos integrados.
+- 2 tabelas transacionais principais (`matriculas` e `reservas_livros`).
 
-Antes de começar, certifique-se de ter instalado:
+## Pré-requisitos
 
-- ☕ **Java JDK 21** ou superior ([Download](https://adoptium.net/))
-- 🐬 **MySQL 8.0** ou superior ([Download](https://dev.mysql.com/downloads/mysql/))
-- 📝 Um editor de texto ou IDE (recomendado: IntelliJ IDEA, Eclipse, VS Code)
+- Java JDK 21+
+- MySQL 8+
 
-### Passo 1: Clonar o Repositório
+## Configuração Local
+
+1. Clone o projeto:
 
 ```bash
 git clone https://github.com/Shizuo0/AcademicSystem.git
 cd AcademicSystem
 ```
 
-> **📝 Nota:** Após clonar, certifique-se de criar seu arquivo `.env` baseado no `.env.example` antes de executar a aplicação.
+2. Crie seu arquivo de ambiente:
 
-### Passo 2: Configurar o Banco de Dados
-
-1. **Iniciar o MySQL Server**:
 ```bash
-# Windows (usando XAMPP, WAMP ou MySQL Workbench)
-# Ou via linha de comando:
-net start MySQL80
+cp .env.example .env
 ```
 
-2. **Criar o banco de dados**:
+3. Configure o banco:
+
 ```bash
 mysql -u root -p < src/sql/schema.sql
 ```
 
-Ou execute manualmente:
-```sql
-mysql -u root -p
-```
-Depois copie e cole o conteúdo de `src/sql/schema.sql`.
-
-3. **Configurar variáveis de ambiente**:
-
-O sistema utiliza o arquivo `.env` para gerenciar configurações sensíveis. Siga os passos:
-
-**a) Copie o arquivo de exemplo:**
-```bash
-# Linux/Mac
-cp .env.example .env
-
-# Windows (PowerShell)
-Copy-Item .env.example .env
-
-# Windows (CMD)
-copy .env.example .env
-```
-
-**b) Edite o arquivo `.env` com suas credenciais:**
-```env
-DB_URL=jdbc:mysql://localhost:3306/sistema_academico
-DB_USER=root
-DB_PASSWORD=sua_senha_aqui
-```
-
-> **⚠️ IMPORTANTE:** O arquivo `.env` contém informações sensíveis e **já está incluído no `.gitignore`**. Nunca faça commit dele para o repositório! Use o `.env.example` como template para outros desenvolvedores.
-
-**c) Ordem de prioridade das configurações:**
-1. ✅ Variáveis do arquivo `.env` (se existir)
-2. ✅ Variáveis de ambiente do sistema operacional
-3. ✅ Valores padrão (localhost, root, 12345678)
-
-### Passo 3: Verificar Dependências
-
-Certifique-se de que os arquivos JAR estão na pasta `lib/`:
-- ✅ `mysql-connector-j-8.0.33.jar`
-- ✅ `gson-2.10.1.jar`
-- ✅ `dotenv-java-3.0.0.jar`
-
-### Passo 4: Compilar o Projeto
+4. Compile:
 
 ```bash
 javac -d bin -cp "lib/*" src/**/*.java src/*.java
 ```
 
-**Para Windows PowerShell:**
+No PowerShell, alternativa:
+
 ```powershell
 javac -d bin -cp "lib/*" $(Get-ChildItem -Recurse -Filter *.java src/ | % FullName)
 ```
 
-### Passo 5: Executar a Aplicação
+5. Execute:
 
-```bash
-# Linux/Mac
-java -cp "bin:lib/*" Main
-
-# Windows (CMD/PowerShell)
-java -cp "bin;lib/*" Main
-```
-
----
-
-## 💻 Como Usar
-
-### Interface Principal
-
-Ao iniciar o sistema, você verá o menu principal:
-
-```
-┌────────────────────────────────────────────────┐
-│               MENU PRINCIPAL                   │
-├────────────────────────────────────────────────┤
-│           CONSULTAS                            │
-│  1. Consultar Discente                         │
-│  2. Consultar Curso e Disciplina               │
-│  3. Consultar Livro                            │
-├────────────────────────────────────────────────┤
-│           MATRÍCULAS                           │
-│  4. Matricular em Disciplina                   │
-│  5. Cancelar Matrícula                         │
-│  6. Minhas Matrículas                          │
-├────────────────────────────────────────────────┤
-│           BIBLIOTECA                           │
-│  7. Reservar Livro                             │
-│  8. Cancelar Reserva                           │
-│  9. Minhas Reservas                            │
-├────────────────────────────────────────────────┤
-│  0. Sair                                       │
-└────────────────────────────────────────────────┘
-```
-
-### Exemplos de Uso
-
-#### 📝 Realizar uma Matrícula
-
-1. **Consultar discentes disponíveis** (opção 1)
-   - Anote o ID do discente desejado (ex: `3`)
-
-2. **Consultar disciplinas do curso** (opção 2)
-   - Selecione o curso
-   - Anote o ID da disciplina (ex: `8374`)
-
-3. **Realizar matrícula** (opção 4)
-   ```
-   ID do Discente: 3
-   ID da Disciplina: 8374
-   ```
-
-4. O sistema validará:
-   - ✅ Status acadêmico (discente ATIVO?)
-   - ✅ Compatibilidade curso-disciplina
-   - ✅ Limite de matrículas (máximo 5)
-   - ✅ Vagas disponíveis
-
-5. Se aprovado, será gerado um **código de matrícula único** (ex: `2520001`)
-
-#### 📚 Reservar um Livro
-
-1. **Consultar livros disponíveis** (opção 3)
-   - Anote o ID do livro (ex: `1748`)
-
-2. **Verificar suas matrículas** (opção 6)
-   - Anote seu código de matrícula (ex: `2520001`)
-
-3. **Fazer reserva** (opção 7)
-   ```
-   Código de Matrícula: 2520001
-   ID do Livro: 1748
-   ```
-
----
-
-## 📖 Documentação Técnica
-
-### Camada de Controle (Controller)
-
-Os **Controllers** gerenciam o fluxo entre a View e os Services:
-
-#### `ControllerFactory`
-```java
-public class ControllerFactory {
-    public static ControllerFactory criar() {
-        // Inicializa todas as dependências
-        // Configura conexão com banco de dados
-        // Instancia controllers e services
-    }
-}
-```
-
-**Responsabilidades:**
-- Criar todas as instâncias necessárias
-- Configurar injeção de dependências
-- Inicializar caches dos microsserviços
-
-#### `MatriculaController`
-```java
-public boolean realizarMatricula(String discenteId, String disciplinaId)
-public boolean cancelarMatriculaPorCodigo(String codigoMatricula)
-public List<Map<String, Object>> consultarMatriculas(String discenteId)
-```
-
----
-
-### Camada de Serviço (Service)
-
-Os **Services** contêm a lógica de negócio:
-
-#### `GestaoAcademicaService`
-```java
-public boolean simularMatricula(String discenteId, String disciplinaId) {
-    // 1. Valida regras de negócio via DisponibilidadeService
-    // 2. Gera código único de matrícula
-    // 3. Persiste no banco via Repository
-    // 4. Retorna sucesso/falha
-}
-```
-
-**Regras de Negócio Implementadas:**
-- ❌ Discente INATIVO não pode se matricular
-- ❌ Disciplina de curso incompatível
-- ❌ Limite de 5 matrículas por discente
-- ❌ Disciplina sem vagas disponíveis
-
-#### `FacadeService`
-```java
-public void inicializarCaches() {
-    // Carrega dados dos 3 microsserviços em paralelo
-    // Utiliza CompletableFuture para execução assíncrona
-}
-```
-
-**Otimização:**
-- ⚡ Carregamento paralelo de dados
-- 📦 Cache local para reduzir chamadas HTTP
-- 🔄 Sincronização automática
-
----
-
-### Camada de Repositório (Repository)
-
-Os **Repositories** abstraem o acesso ao banco de dados:
-
-#### Interface `IMatriculaRepository`
-```java
-public interface IMatriculaRepository {
-    boolean adicionar(Matricula matricula);
-    boolean removerPorCodigo(String codigoMatricula);
-    Matricula buscarPorCodigo(String codigoMatricula);
-    List<Matricula> listarPorDiscente(String discenteId);
-    boolean existeMatricula(String discenteId, String disciplinaId);
-}
-```
-
-#### Implementação MySQL
-```java
-public class MatriculaRepositoryImpl implements IMatriculaRepository {
-    // Implementação usando JDBC
-    // Prepared Statements para segurança
-    // Connection pooling via DatabaseConnection
-}
-```
-
-**Características:**
-- ✅ Prepared Statements (previne SQL Injection)
-- ✅ Gerenciamento automático de conexões
-- ✅ Tratamento de exceções SQL
-- ✅ Limpeza automática ao encerrar aplicação
-
----
-
-### Camada de Modelo (Model)
-
-Os **Models** representam as entidades do domínio:
-
-#### `Matricula`
-```java
-public class Matricula {
-    private String codigoMatricula;  // Formato: AAMMDDNNN (ano+mês+dia+ordem)
-    private String discenteId;
-    private String disciplinaId;
-    private LocalDate dataMatricula;
-}
-```
-
-#### `ReservaLivro`
-```java
-public class ReservaLivro {
-    private String discenteId;
-    private String livroId;
-    private LocalDate dataReserva;
-}
-```
-
----
-
-### Exceções Customizadas
-
-```java
-DiscenteInativoException          // Discente com status != ATIVO
-CursoIncompativelException        // Disciplina de outro curso
-LimiteMatriculasExcedidoException // Mais de 5 matrículas
-SemVagasException                 // Disciplina lotada
-LivroIndisponivelException        // Livro já emprestado
-```
-
----
-
-### Utilitários
-
-#### `DatabaseConnection`
-```java
-public Connection getConnection()          // Obtém conexão MySQL
-public void limparTodasTabelas()          // Limpa dados ao encerrar
-public static void fecharRecursos(...)    // Fecha ResultSet, Statement, etc.
-```
-
-#### `Logger`
-```java
-Logger.sucesso("Operação realizada!");    // [OK] verde
-Logger.erro("Falha na operação!");        // [ERRO] vermelho
-Logger.info("Informação geral");           // [INFO] azul
-Logger.dica("Sugestão para o usuário");    // [DICA] amarelo
-```
-
-#### `TableFormatter`
-```java
-TableFormatter.imprimirTopoTabela(larguras)
-TableFormatter.imprimirLinhaTabela(larguras, valores...)
-TableFormatter.imprimirRodapeTabela(larguras)
-```
-
----
-
-## 🗄️ Estrutura do Banco de Dados
-
-### Tabela `matriculas`
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | INT (PK, AI) | Identificador único |
-| `codigo_matricula` | VARCHAR(20) UNIQUE | Código único da matrícula |
-| `discente_id` | VARCHAR(50) | ID do discente (FK lógica) |
-| `disciplina_id` | VARCHAR(50) | ID da disciplina (FK lógica) |
-| `data_matricula` | DATE | Data da matrícula |
-| `created_at` | TIMESTAMP | Data de criação do registro |
-
-**Constraints:**
-- ✅ `UNIQUE(discente_id, disciplina_id)` - Previne duplicatas
-- ✅ Índices em `codigo_matricula`, `discente_id`, `disciplina_id`
-
-### Tabela `reservas_livros`
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | INT (PK, AI) | Identificador único |
-| `discente_id` | VARCHAR(50) | ID do discente |
-| `livro_id` | VARCHAR(50) | ID do livro |
-| `data_reserva` | DATE | Data da reserva |
-| `created_at` | TIMESTAMP | Data de criação |
-
-**Constraints:**
-- ✅ `UNIQUE(discente_id, livro_id)` - Um livro por discente
-- ✅ Índices otimizados para consultas
-
----
-
-## ⚠️ Comportamento Importante
-
-### Limpeza Automática de Dados
-
-O sistema implementa um **Shutdown Hook** que limpa automaticamente todas as tabelas ao encerrar:
-
-```java
-Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-    controllerFactory.getDatabaseConnection().limparTodasTabelas();
-}));
-```
-
-**Isso significa:**
-- ✅ Dados são persistidos **durante** a execução
-- ❌ Dados são **apagados** ao fechar o sistema
-- 🎯 Ideal para testes e demonstrações
-
-Para **desabilitar** esse comportamento, remova o shutdown hook em `ConsoleView.java`.
-
----
-
-## 🐛 Troubleshooting
-
-### Erro: "Driver MySQL não encontrado"
-
-**Solução:**
-```bash
-# Verifique se o JAR está em lib/
-ls lib/mysql-connector-j-8.0.33.jar
-
-# Recompile com o classpath correto
-javac -d bin -cp "lib/*" src/**/*.java src/*.java
-```
-
-### Erro: "Não foi possível conectar ao MySQL"
-
-**Solução:**
-1. Verifique se o MySQL está rodando:
 ```bash
 # Windows
-net start MySQL80
+java -cp "bin;lib/*" Main
 
 # Linux/Mac
-sudo systemctl start mysql
+java -cp "bin:lib/*" Main
 ```
 
-2. Teste a conexão:
-```bash
-mysql -u root -p
-```
+## Scripts e Comandos
 
-3. Verifique as credenciais no arquivo `.env`:
+Como o projeto não usa build tool dedicada, os comandos principais são:
+
+- `javac -d bin -cp "lib/*" src/**/*.java src/*.java` para compilação.
+- `java -cp "bin;lib/*" Main` para execução no Windows.
+- `java -cp "bin:lib/*" Main` para execução em Linux/Mac.
+
+## Variáveis de Ambiente
+
+Arquivo: `.env`
+
 ```env
 DB_URL=jdbc:mysql://localhost:3306/sistema_academico
 DB_USER=root
-DB_PASSWORD=sua_senha
+DB_PASSWORD=your_password_here
 ```
 
-4. Se o arquivo `.env` não existir, crie-o baseado no `.env.example`:
-```bash
-cp .env.example .env
-```
+Fallback interno (caso `.env` não exista):
 
-### Erro: "Tabela não existe"
+- URL padrão: `jdbc:mysql://localhost:3306/sistema_academico`
+- Usuário padrão: `root`
+- Senha padrão: `12345678`
 
-**Solução:**
-```bash
-# Execute o script de criação
-mysql -u root -p < src/sql/schema.sql
-```
+## Segurança e Confiabilidade
 
-### Erro ao compilar: "package does not exist"
+- Uso de Prepared Statements nos repositórios (mitiga SQL Injection).
+- Exceções de domínio para falhas previsíveis de negócio.
+- Cache de integração com inicialização paralela (`CompletableFuture`) para reduzir tempo de carga.
+- Logs de operação para apoiar diagnóstico.
 
-**Solução:**
-```bash
-# Certifique-se de compilar TODOS os arquivos
-javac -d bin -cp "lib/*" src/**/*.java src/*.java
-```
+## Práticas de Engenharia
 
----
+- Separação por camadas e responsabilidades.
+- Regras de negócio centralizadas em services.
+- Persistência isolada via interfaces de repositório.
+- Modelagem de exceções específicas ao domínio acadêmico.
 
-## 🧪 Testes
-
-### Teste Manual - Fluxo Completo
-
-1. **Iniciar sistema**
-```bash
-java -cp "bin;lib/*" Main
-```
-
-2. **Consultar discente** (opção 1)
-   - Verificar se os dados são carregados do microsserviço
-
-3. **Matricular discente** (opção 4)
-   - Testar com ID válido: deve criar matrícula
-   - Testar com discente inativo: deve rejeitar
-   - Matricular 5x: deve aceitar
-   - Matricular 6ª vez: deve rejeitar
-
-4. **Consultar matrículas** (opção 6)
-   - Verificar se os dados foram salvos no MySQL
-
-5. **Cancelar matrícula** (opção 5)
-   - Usar código gerado anteriormente
-
-6. **Reservar livro** (opção 7)
-   - Verificar validação de disponibilidade
-
-### Consultas SQL para Verificação
-
-```sql
--- Verificar matrículas salvas
-SELECT * FROM matriculas ORDER BY created_at DESC;
-
--- Contar matrículas por discente
-SELECT discente_id, COUNT(*) as total 
-FROM matriculas 
-GROUP BY discente_id;
-
--- Verificar reservas
-SELECT * FROM reservas_livros;
-```
-
----
-
-## 📝 To-Do / Melhorias Futuras
-
-- [ ] Implementar autenticação de usuários
-- [ ] Adicionar API REST própria (Spring Boot)
-- [ ] Migrar para arquitetura de microsserviços completa
-- [ ] Implementar testes unitários (JUnit 5)
-- [ ] Adicionar interface gráfica (JavaFX ou Swing)
-- [ ] Implementar sistema de notificações
-- [ ] Adicionar relatórios em PDF
-- [ ] Dockerizar a aplicação
-- [ ] Implementar CI/CD com GitHub Actions
-
----
-
-## 👤 Autor
+## Autor
 
 **Paulo Shizuo Vasconcelos Tatibana**
 
-- GitHub: [@Shizuo0](https://github.com/Shizuo0)
-- LinkedIn: [Paulo Shizuo](https://linkedin.com/in/seu-perfil)
-
----
-
-<div align="center">
-
-**Desenvolvido com ☕ e Java**
-
-</div>
+- GitHub: https://github.com/Shizu0n
+- LinkedIn: https://www.linkedin.com/in/paulo-shizuo/
